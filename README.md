@@ -14,4 +14,3 @@ Since I am not familiar with tantivy or rust, and I am a bit lazy, this tool is 
 
 Known limitation:
 1. Only support `text` or `U64` field type.
-2. Only build for `x86_64-unknown-linux-musl` target.
