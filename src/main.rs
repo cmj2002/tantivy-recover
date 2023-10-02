@@ -12,15 +12,26 @@ fn main() {
     let searcher = index_reader.searcher();
     let schema = index.schema();
 
+    // For version 1.1.0 and 1.2.0
+    const CSV_FIELDS: [&str; 13] = [
+        "id",
+        "title",
+        "author",
+        "publisher",
+        "extension",
+        "filesize",
+        "language",
+        "year",
+        "pages",
+        "isbn",
+        "ipfs_cid",
+        "cover_url",
+        "md5"
+    ];
+
     let csv_file = std::fs::File::create("output.csv").unwrap();
     let mut csv_writer = csv::Writer::from_writer(csv_file);
-
-    // Write header
-    let mut header = Vec::new();
-    for (_field,field_entry) in schema.fields() {
-        header.push(field_entry.name().to_string());
-    }
-    csv_writer.write_record(header).unwrap();
+    csv_writer.write_record(CSV_FIELDS).unwrap();
 
 
     let segment_headers = searcher.segment_readers();
@@ -39,7 +50,9 @@ fn main() {
         for doc in tqdm(store_reader.iter(segment_reader.alive_bitset())){
             let doc = doc.unwrap();
             let mut doc_vec = Vec::new();
-            for (field,field_entry) in schema.fields() {
+            for field_name in CSV_FIELDS {
+                let field = schema.get_field(field_name).unwrap();
+                let field_entry = schema.get_field_entry(field);
                 match field_entry.field_type(){
                     tantivy::schema::FieldType::Str(_) => {
                         let text = doc.get_first(field).unwrap().as_text().unwrap();
@@ -56,5 +69,7 @@ fn main() {
             csv_writer.write_record(doc_vec).unwrap();
         }
     }
+    // clean ups
+    csv_writer.flush().unwrap();
     println!("Done, documents written to output.csv")
 }
